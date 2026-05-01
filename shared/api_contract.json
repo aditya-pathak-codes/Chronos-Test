@@ -1,0 +1,18 @@
+{
+  "patient_id": "string",
+  "risk_2h": 0.0,
+  "risk_6h": 0.0,
+  "risk_12h": 0.0,
+  "risk_delta": 0.0,
+  "triage_tier": "string",
+  "shap_top3": [
+    { "label": "string", "value": 0.0, "direction": "string" }
+  ],
+  "vitals": {
+    "hr": 0,
+    "map": 0,
+    "spo2": 0,
+    "rr": 0,
+    "temp_c": 0
+  }
+}
