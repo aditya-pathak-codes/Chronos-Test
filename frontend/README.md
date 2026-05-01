@@ -63,4 +63,4 @@ Instead of reacting to emergencies, Chronos enables **proactive intervention**, 
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ System Architecture (Team Syndicate)
