@@ -334,6 +334,39 @@ function WhatIfPanel({ patient }) {
   )
 }
 
+const backdropDrops = Array.from({ length: 32 }, (_, index) => {
+  const tones = ['blue', 'green', 'blue', 'amber', 'blue', 'red']
+  return {
+    id: index,
+    delay: -((index * 0.58) % 10),
+    duration: 8 + (index % 8) * 0.72,
+    height: 76 + (index % 5) * 22,
+    opacity: 0.18 + (index % 4) * 0.055,
+    tone: tones[index % tones.length],
+    x: (index * 31 + (index % 4) * 7) % 100,
+  }
+})
+
+function LiveBackdrop() {
+  return (
+    <div className="live-backdrop" aria-hidden="true">
+      {backdropDrops.map((drop) => (
+        <span
+          className={`falling-drop ${drop.tone}`}
+          key={drop.id}
+          style={{
+            '--drop-delay': `${drop.delay}s`,
+            '--drop-duration': `${drop.duration}s`,
+            '--drop-height': `${drop.height}px`,
+            '--drop-opacity': drop.opacity,
+            '--drop-x': `${drop.x}%`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
 function LoginPage({ onLogin }) {
   const [staffId, setStaffId] = useState(doctors[0].staffId)
   const [password, setPassword] = useState('')
@@ -354,6 +387,7 @@ function LoginPage({ onLogin }) {
 
   return (
     <main className="app-shell login-shell">
+      <LiveBackdrop />
       <div className="login-frame">
         <section className="login-copy" aria-label="Project Chronos access">
           <p>Project Chronos</p>
@@ -424,6 +458,28 @@ function LoginPage({ onLogin }) {
   )
 }
 
+function LoadingScreen({ doctor }) {
+  return (
+    <main className="app-shell loading-shell">
+      <LiveBackdrop />
+      <section className="loader-card" role="status" aria-live="polite">
+        <div className="loader-mark" aria-hidden="true">
+          <span />
+        </div>
+        <p>Project Chronos</p>
+        <h1>Opening {doctor.unit}</h1>
+        <span className="mission-line">Loading assigned patients for {doctor.name}</span>
+        <div className="loader-progress" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+          <i />
+        </div>
+      </section>
+    </main>
+  )
+}
+
 function AlertBanner({ patient }) {
   if (!patient || tierForRisk(patient.risk_2h) !== 'RED') return null
 
@@ -453,11 +509,13 @@ function AlertBanner({ patient }) {
 
 function App() {
   const [currentDoctor, setCurrentDoctor] = useState(doctorFromSession)
+  const [loadingDoctor, setLoadingDoctor] = useState(null)
   const [patients, setPatients] = useState(mockPatients)
   const [selectedId, setSelectedId] = useState(mockPatients[0].patient_id)
   const [source, setSource] = useState('Mock data ready')
   const [demoRunning, setDemoRunning] = useState(false)
   const [demoStep, setDemoStep] = useState(0)
+  const authTimerRef = useRef(null)
   const demoTimerRef = useRef(null)
 
   const assignedPatients = useMemo(
@@ -471,6 +529,13 @@ function App() {
     if (demoTimerRef.current) {
       clearInterval(demoTimerRef.current)
       demoTimerRef.current = null
+    }
+  }, [])
+
+  const stopAuthTimer = useCallback(() => {
+    if (authTimerRef.current) {
+      clearTimeout(authTimerRef.current)
+      authTimerRef.current = null
     }
   }, [])
 
@@ -498,20 +563,31 @@ function App() {
     }
   }, [currentDoctor, loadPatients])
 
-  useEffect(() => () => stopDemoTimer(), [stopDemoTimer])
+  useEffect(() => () => {
+    stopAuthTimer()
+    stopDemoTimer()
+  }, [stopAuthTimer, stopDemoTimer])
 
   function handleLogin(doctor) {
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ doctorId: doctor.id }))
-    setCurrentDoctor(doctor)
-    setPatients(mockPatients)
-    setSelectedId((mockPatients.find((patient) => patientAssignedToDoctor(patient, doctor)) || mockPatients[0]).patient_id)
-    setSource('Mock data ready')
+    stopAuthTimer()
+    setLoadingDoctor(doctor)
+    authTimerRef.current = setTimeout(() => {
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ doctorId: doctor.id }))
+      setCurrentDoctor(doctor)
+      setPatients(mockPatients)
+      setSelectedId((mockPatients.find((patient) => patientAssignedToDoctor(patient, doctor)) || mockPatients[0]).patient_id)
+      setSource('Mock data ready')
+      setLoadingDoctor(null)
+      authTimerRef.current = null
+    }, 1050)
   }
 
   function handleLogout() {
+    stopAuthTimer()
     stopDemoTimer()
     localStorage.removeItem(SESSION_KEY)
     setCurrentDoctor(null)
+    setLoadingDoctor(null)
     setDemoRunning(false)
     setDemoStep(0)
     setPatients(mockPatients)
@@ -558,12 +634,17 @@ function App() {
     setSource('Mock data fallback')
   }
 
+  if (loadingDoctor) {
+    return <LoadingScreen doctor={loadingDoctor} />
+  }
+
   if (!currentDoctor) {
     return <LoginPage onLogin={handleLogin} />
   }
 
   return (
     <main className={`app-shell ${demoRunning ? 'demo-mode' : ''}`}>
+      <LiveBackdrop />
       <AlertBanner patient={selectedPatient} />
       <header className="topbar">
         <div>
