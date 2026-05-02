@@ -1,7 +1,41 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './index.css'
 
 const API_BASE = 'http://localhost:8000'
+const SESSION_KEY = 'chronos-doctor-session'
+
+const doctors = [
+  {
+    id: 'dr-anjali-rao',
+    name: 'Dr. Anjali Rao',
+    staffId: 'RAO-ICU',
+    email: 'rao@chronos.health',
+    password: 'chronos123',
+    specialty: 'Critical Care',
+    unit: 'ICU Alpha',
+    assignedPatientIds: ['BED-04', 'BED-12', 'BED-16', 'DEMO-CRASH'],
+  },
+  {
+    id: 'dr-arjun-kapoor',
+    name: 'Dr. Arjun Kapoor',
+    staffId: 'KAPOOR-ICU',
+    email: 'kapoor@chronos.health',
+    password: 'chronos123',
+    specialty: 'Pulmonary ICU',
+    unit: 'ICU Beta',
+    assignedPatientIds: ['BED-09', 'BED-02', 'BED-21', 'DEMO-CRASH'],
+  },
+  {
+    id: 'dr-maya-mehta',
+    name: 'Dr. Maya Mehta',
+    staffId: 'MEHTA-ICU',
+    email: 'mehta@chronos.health',
+    password: 'chronos123',
+    specialty: 'Night Intensivist',
+    unit: 'ICU Float',
+    assignedPatientIds: ['BED-04', 'BED-09', 'BED-12', 'BED-02', 'BED-16', 'BED-21', 'DEMO-CRASH'],
+  },
+]
 
 const mockPatients = [
   {
@@ -131,6 +165,43 @@ function tierMeta(tier) {
     return { label: 'AMBER', action: 'Notify attending', className: 'tier-amber' }
   }
   return { label: 'GREEN', action: 'Routine monitoring', className: 'tier-green' }
+}
+
+function doctorFromSession() {
+  try {
+    const saved = localStorage.getItem(SESSION_KEY)
+    if (!saved) return null
+    const session = JSON.parse(saved)
+    return doctors.find((doctor) => doctor.id === session?.doctorId) || null
+  } catch {
+    return null
+  }
+}
+
+function matchesDoctorLogin(doctor, value) {
+  const normalized = value.trim().toLowerCase()
+  return doctor.staffId.toLowerCase() === normalized || doctor.email.toLowerCase() === normalized
+}
+
+function patientAssignedToDoctor(patient, doctor) {
+  if (!doctor || !patient) return false
+  const externalDoctorFields = [
+    patient.doctor_id,
+    patient.doctorId,
+    patient.assigned_doctor_id,
+    patient.assignedDoctorId,
+    patient.assigned_doctor,
+    patient.assignedDoctor,
+  ]
+    .filter(Boolean)
+    .map((value) => String(value).toLowerCase())
+
+  return (
+    doctor.assignedPatientIds.includes(patient.patient_id) ||
+    externalDoctorFields.includes(doctor.id.toLowerCase()) ||
+    externalDoctorFields.includes(doctor.staffId.toLowerCase()) ||
+    externalDoctorFields.includes(doctor.email.toLowerCase())
+  )
 }
 
 function TriageBadge({ risk, tier }) {
@@ -263,6 +334,96 @@ function WhatIfPanel({ patient }) {
   )
 }
 
+function LoginPage({ onLogin }) {
+  const [staffId, setStaffId] = useState(doctors[0].staffId)
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+
+  function handleSubmit(event) {
+    event.preventDefault()
+    const doctor = doctors.find((item) => matchesDoctorLogin(item, staffId))
+
+    if (!doctor || doctor.password !== password) {
+      setError('Invalid staff ID or password')
+      return
+    }
+
+    setError('')
+    onLogin(doctor)
+  }
+
+  return (
+    <main className="app-shell login-shell">
+      <div className="login-frame">
+        <section className="login-copy" aria-label="Project Chronos access">
+          <p>Project Chronos</p>
+          <h1>Doctor sign in</h1>
+          <span className="mission-line">ICU triage radar with patient access scoped by clinical assignment</span>
+          <div className="summary-strip login-summary">
+            <div><strong>{doctors.length}</strong><span>doctor rosters</span></div>
+            <div><strong>2h</strong><span>primary risk view</span></div>
+            <div><strong>6 beds</strong><span>mock ICU census</span></div>
+            <div><strong>Local</strong><span>demo authentication</span></div>
+          </div>
+        </section>
+
+        <form className="login-card" onSubmit={handleSubmit}>
+          <div className="section-head compact">
+            <div>
+              <p>Secure access</p>
+              <h2>Clinician login</h2>
+            </div>
+          </div>
+
+          <label className="login-field">
+            <span>Staff ID or email</span>
+            <input
+              autoComplete="username"
+              autoFocus
+              onChange={(event) => setStaffId(event.target.value)}
+              placeholder="RAO-ICU"
+              type="text"
+              value={staffId}
+            />
+          </label>
+
+          <label className="login-field">
+            <span>Password</span>
+            <input
+              autoComplete="current-password"
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Enter password"
+              type="password"
+              value={password}
+            />
+          </label>
+
+          {error ? <div className="login-error" role="alert">{error}</div> : null}
+
+          <button className="login-submit" type="submit">Enter dashboard</button>
+
+          <div className="doctor-switcher" aria-label="Demo doctor accounts">
+            {doctors.map((doctor) => (
+              <button
+                className={matchesDoctorLogin(doctor, staffId) ? 'active' : ''}
+                key={doctor.id}
+                onClick={() => {
+                  setStaffId(doctor.staffId)
+                  setError('')
+                }}
+                type="button"
+              >
+                <strong>{doctor.name}</strong>
+                <span>{doctor.unit} - {doctor.assignedPatientIds.length - 1} beds</span>
+              </button>
+            ))}
+          </div>
+        </form>
+      </div>
+    </main>
+  )
+}
+
 function AlertBanner({ patient }) {
   if (!patient || tierForRisk(patient.risk_2h) !== 'RED') return null
 
@@ -291,17 +452,30 @@ function AlertBanner({ patient }) {
 }
 
 function App() {
+  const [currentDoctor, setCurrentDoctor] = useState(doctorFromSession)
   const [patients, setPatients] = useState(mockPatients)
   const [selectedId, setSelectedId] = useState(mockPatients[0].patient_id)
   const [source, setSource] = useState('Mock data ready')
   const [demoRunning, setDemoRunning] = useState(false)
   const [demoStep, setDemoStep] = useState(0)
+  const demoTimerRef = useRef(null)
 
-  const sortedPatients = useMemo(() => [...patients].sort((a, b) => b.risk_2h - a.risk_2h), [patients])
+  const assignedPatients = useMemo(
+    () => patients.filter((patient) => patientAssignedToDoctor(patient, currentDoctor)),
+    [currentDoctor, patients],
+  )
+  const sortedPatients = useMemo(() => [...assignedPatients].sort((a, b) => b.risk_2h - a.risk_2h), [assignedPatients])
   const selectedPatient = sortedPatients.find((patient) => patient.patient_id === selectedId) || sortedPatients[0]
 
+  const stopDemoTimer = useCallback(() => {
+    if (demoTimerRef.current) {
+      clearInterval(demoTimerRef.current)
+      demoTimerRef.current = null
+    }
+  }, [])
+
   const loadPatients = useCallback(async () => {
-    if (demoRunning) return
+    if (!currentDoctor || demoRunning) return
     try {
       const response = await fetch(`${API_BASE}/patients`)
       if (!response.ok) throw new Error('API offline')
@@ -312,18 +486,42 @@ function App() {
       setPatients(mockPatients)
       setSource('Mock data fallback')
     }
-  }, [demoRunning])
+  }, [currentDoctor, demoRunning])
 
   useEffect(() => {
+    if (!currentDoctor) return undefined
     const firstLoad = setTimeout(loadPatients, 0)
     const handle = setInterval(loadPatients, 30000)
     return () => {
       clearTimeout(firstLoad)
       clearInterval(handle)
     }
-  }, [loadPatients])
+  }, [currentDoctor, loadPatients])
+
+  useEffect(() => () => stopDemoTimer(), [stopDemoTimer])
+
+  function handleLogin(doctor) {
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ doctorId: doctor.id }))
+    setCurrentDoctor(doctor)
+    setPatients(mockPatients)
+    setSelectedId((mockPatients.find((patient) => patientAssignedToDoctor(patient, doctor)) || mockPatients[0]).patient_id)
+    setSource('Mock data ready')
+  }
+
+  function handleLogout() {
+    stopDemoTimer()
+    localStorage.removeItem(SESSION_KEY)
+    setCurrentDoctor(null)
+    setDemoRunning(false)
+    setDemoStep(0)
+    setPatients(mockPatients)
+    setSelectedId(mockPatients[0].patient_id)
+    setSource('Mock data ready')
+  }
 
   async function startDemo() {
+    if (!currentDoctor) return
+    stopDemoTimer()
     let scenario = fallbackScenario
     try {
       const response = await fetch('/scenario.json')
@@ -338,10 +536,10 @@ function App() {
     setPatients([scenario[0], ...mockPatients.filter((patient) => patient.patient_id !== scenario[0].patient_id)])
 
     let index = 0
-    const handle = setInterval(() => {
+    demoTimerRef.current = setInterval(() => {
       index += 1
       if (index >= scenario.length) {
-        clearInterval(handle)
+        stopDemoTimer()
         setDemoRunning(false)
         return
       }
@@ -352,11 +550,16 @@ function App() {
   }
 
   function stopDemo() {
+    stopDemoTimer()
     setDemoRunning(false)
     setDemoStep(0)
     setPatients(mockPatients)
-    setSelectedId(mockPatients[0].patient_id)
+    setSelectedId((mockPatients.find((patient) => patientAssignedToDoctor(patient, currentDoctor)) || mockPatients[0]).patient_id)
     setSource('Mock data fallback')
+  }
+
+  if (!currentDoctor) {
+    return <LoginPage onLogin={handleLogin} />
   }
 
   return (
@@ -369,33 +572,47 @@ function App() {
           <span className="mission-line">Predictive stability engine for 2h, 6h, and 12h risk windows</span>
         </div>
         <div className="top-actions">
+          <span className="doctor-chip">
+            <strong>{currentDoctor.name}</strong>
+            <span>{currentDoctor.unit}</span>
+          </span>
           <span className="source-chip"><i aria-hidden="true" />{source}</span>
           <button type="button" onClick={demoRunning ? stopDemo : startDemo}>
             {demoRunning ? `Stop Demo (${demoStep + 1}/10)` : 'Start Demo'}
           </button>
+          <button className="secondary-action" type="button" onClick={handleLogout}>Logout</button>
         </div>
       </header>
 
       <section className="summary-strip">
-        <div><strong>{sortedPatients.length}</strong><span>patients tracked</span></div>
+        <div><strong>{sortedPatients.length}</strong><span>assigned patients</span></div>
         <div><strong>{sortedPatients.filter((patient) => tierForRisk(patient.risk_2h) === 'RED').length}</strong><span>critical</span></div>
         <div><strong>2h / 6h / 12h</strong><span>risk cascade</span></div>
-        <div><strong>Local</strong><span>zero cloud inference</span></div>
+        <div><strong>{currentDoctor.unit}</strong><span>{currentDoctor.specialty}</span></div>
       </section>
 
       <div className="dashboard-grid">
         <section className="patient-board" aria-label="Patients sorted by 2 hour risk">
           <div className="section-head">
             <div>
-              <p>Live census</p>
+              <p>Assigned census</p>
               <h2>Ranked by 2h crash risk</h2>
             </div>
             <span>Auto-refresh 30s</span>
           </div>
           <div className="patient-list">
-            {sortedPatients.map((patient) => (
-              <PatientCard key={patient.patient_id} patient={patient} selected={patient.patient_id === selectedPatient.patient_id} onSelect={setSelectedId} />
-            ))}
+            {sortedPatients.length ? (
+              sortedPatients.map((patient) => (
+                <PatientCard
+                  key={patient.patient_id}
+                  onSelect={setSelectedId}
+                  patient={patient}
+                  selected={patient.patient_id === selectedPatient?.patient_id}
+                />
+              ))
+            ) : (
+              <div className="empty-state">No assigned patients were found for this doctor.</div>
+            )}
           </div>
         </section>
 
@@ -406,17 +623,23 @@ function App() {
               <h2>Clinical view</h2>
             </div>
           </div>
-          <div className="detail-header">
-            <span>{selectedPatient.patient_id}</span>
-            <div className="risk-number">{percent(selectedPatient.risk_2h)}</div>
-            <TriageBadge risk={selectedPatient.risk_2h} tier={selectedPatient.triage_tier} />
-          </div>
-          <section className="panel">
-            <h3>3-horizon cascade</h3>
-            <RiskCascade patient={selectedPatient} />
-          </section>
-          <ShapCard patient={selectedPatient} />
-          <WhatIfPanel patient={selectedPatient} />
+          {selectedPatient ? (
+            <>
+              <div className="detail-header">
+                <span>{selectedPatient.patient_id}</span>
+                <div className="risk-number">{percent(selectedPatient.risk_2h)}</div>
+                <TriageBadge risk={selectedPatient.risk_2h} tier={selectedPatient.triage_tier} />
+              </div>
+              <section className="panel">
+                <h3>3-horizon cascade</h3>
+                <RiskCascade patient={selectedPatient} />
+              </section>
+              <ShapCard patient={selectedPatient} />
+              <WhatIfPanel patient={selectedPatient} />
+            </>
+          ) : (
+            <div className="empty-state detail-empty">Select an assigned patient to review diagnosis signals.</div>
+          )}
         </aside>
       </div>
     </main>
