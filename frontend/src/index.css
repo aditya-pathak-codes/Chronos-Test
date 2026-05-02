@@ -1,6 +1,6 @@
 :root {
   color: #17202a;
-  background: #eef3f8;
+  background: #101822;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -19,8 +19,8 @@ body {
 
 body::before {
   background:
-    linear-gradient(90deg, rgba(37, 99, 235, 0.05) 1px, transparent 1px),
-    linear-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px);
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px);
   background-size: 44px 44px;
   content: "";
   inset: 0;
@@ -78,11 +78,11 @@ button {
 
 @keyframes backgroundMotion {
   from {
-    background-position: 0 0, 50% 46%, 50% 50%;
+    background-position: 0 0, 50% 46%, 52% 50%, 50% 50%, 50% 50%;
   }
 
   to {
-    background-position: 42px 64px, 48% 52%, 52% 48%;
+    background-position: 42px 64px, 48% 52%, 54% 46%, 51% 48%, 50% 50%;
   }
 }
 
@@ -135,10 +135,11 @@ button {
 .app-shell::before {
   animation: backgroundMotion 24s linear infinite;
   background:
-    linear-gradient(90deg, rgba(37, 99, 235, 0.055) 1px, transparent 1px),
-    radial-gradient(circle at 18% 18%, rgba(37, 99, 235, 0.12), transparent 34%),
-    linear-gradient(145deg, rgba(238, 243, 248, 0.96), rgba(238, 243, 248, 0.72) 46%, rgba(214, 226, 239, 0.94));
-  background-size: 42px 42px, 100% 100%, 100% 100%;
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    radial-gradient(circle at 16% 18%, rgba(37, 99, 235, 0.24), transparent 34%),
+    radial-gradient(circle at 86% 72%, rgba(22, 163, 74, 0.16), transparent 30%),
+    linear-gradient(145deg, #101822 0%, #142832 42%, #201b2a 74%, #111827 100%);
+  background-size: 42px 42px, 100% 100%, 100% 100%, 100% 100%;
   content: "";
   inset: 0;
   opacity: 1;
@@ -155,11 +156,12 @@ button {
 .login-shell::before,
 .loading-shell::before {
   background:
-    linear-gradient(90deg, rgba(37, 99, 235, 0.05) 1px, transparent 1px),
-    radial-gradient(circle at 18% 22%, rgba(37, 99, 235, 0.16), transparent 32%),
-    radial-gradient(circle at 82% 68%, rgba(22, 163, 74, 0.1), transparent 30%),
-    linear-gradient(145deg, rgba(238, 243, 248, 0.9), rgba(238, 243, 248, 0.58) 46%, rgba(214, 226, 239, 0.92));
-  background-size: 42px 42px, 100% 100%, 100% 100%, 100% 100%;
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    radial-gradient(circle at 18% 22%, rgba(37, 99, 235, 0.28), transparent 32%),
+    radial-gradient(circle at 82% 68%, rgba(22, 163, 74, 0.18), transparent 30%),
+    radial-gradient(circle at 58% 18%, rgba(245, 158, 11, 0.1), transparent 24%),
+    linear-gradient(145deg, #0d1520 0%, #14252d 46%, #221c2a 72%, #101820 100%);
+  background-size: 42px 42px, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
 }
 
 .live-backdrop {
@@ -179,22 +181,26 @@ button {
 
 .live-backdrop::before {
   background:
-    radial-gradient(circle at 22% 20%, rgba(37, 99, 235, 0.12), transparent 24%),
-    radial-gradient(circle at 78% 34%, rgba(245, 158, 11, 0.08), transparent 20%),
-    radial-gradient(circle at 62% 84%, rgba(22, 163, 74, 0.09), transparent 24%);
-  filter: blur(6px);
+    radial-gradient(circle at 22% 20%, rgba(255, 255, 255, 0.11), transparent 22%),
+    radial-gradient(circle at 78% 34%, rgba(37, 99, 235, 0.1), transparent 20%),
+    radial-gradient(circle at 62% 84%, rgba(22, 163, 74, 0.08), transparent 24%);
+  filter: blur(8px);
 }
 
 .live-backdrop::after {
-  background: linear-gradient(180deg, rgba(238, 243, 248, 0.18), rgba(238, 243, 248, 0.68) 72%);
+  background: linear-gradient(180deg, rgba(16, 24, 34, 0.04), rgba(16, 24, 34, 0.2) 72%);
 }
 
 .falling-drop {
   animation: fallingMotion var(--drop-duration) linear infinite;
   animation-delay: var(--drop-delay);
-  background: linear-gradient(180deg, transparent, rgba(37, 99, 235, 0.48), transparent);
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.9), transparent);
   border-radius: 999px;
-  filter: drop-shadow(0 0 12px rgba(37, 99, 235, 0.24));
+  color: #fff;
+  filter:
+    drop-shadow(0 0 8px rgba(255, 255, 255, 0.95))
+    drop-shadow(0 0 20px rgba(255, 255, 255, 0.48))
+    drop-shadow(0 0 34px rgba(37, 99, 235, 0.28));
   height: var(--drop-height);
   left: var(--drop-x);
   opacity: 0;
@@ -206,7 +212,10 @@ button {
 .falling-drop::after {
   background: currentColor;
   border-radius: 999px;
-  box-shadow: 0 0 18px currentColor;
+  box-shadow:
+    0 0 14px rgba(255, 255, 255, 0.95),
+    0 0 28px rgba(255, 255, 255, 0.5),
+    0 0 42px rgba(37, 99, 235, 0.3);
   content: "";
   height: 6px;
   left: 50%;
@@ -218,23 +227,19 @@ button {
 }
 
 .falling-drop.blue {
-  color: #2563eb;
-  background: linear-gradient(180deg, transparent, rgba(37, 99, 235, 0.52), transparent);
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.92), transparent);
 }
 
 .falling-drop.red {
-  color: #d92d20;
-  background: linear-gradient(180deg, transparent, rgba(217, 45, 32, 0.44), transparent);
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.82), transparent);
 }
 
 .falling-drop.amber {
-  color: #f59e0b;
-  background: linear-gradient(180deg, transparent, rgba(245, 158, 11, 0.48), transparent);
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.88), transparent);
 }
 
 .falling-drop.green {
-  color: #16a34a;
-  background: linear-gradient(180deg, transparent, rgba(22, 163, 74, 0.46), transparent);
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.86), transparent);
 }
 
 .topbar,
@@ -266,7 +271,7 @@ button {
 
 .topbar h1,
 .login-copy h1 {
-  color: #0f172a;
+  color: #f8fafc;
   font-size: 38px;
   letter-spacing: 0;
   line-height: 1;
@@ -283,6 +288,12 @@ button {
   font-size: 14px;
   font-weight: 650;
   margin-top: 8px;
+}
+
+.topbar p,
+.topbar .mission-line,
+.login-copy .mission-line {
+  color: #d8e8ff;
 }
 
 .top-actions {
