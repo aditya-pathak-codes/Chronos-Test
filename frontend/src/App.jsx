@@ -391,7 +391,7 @@ function LoginPage({ onLogin }) {
       <div className="login-frame">
         <section className="login-copy" aria-label="Project Chronos access">
           <p>Project Chronos</p>
-          <h1>Digital twin access</h1>
+          <h1>Secure Gateway</h1>
           <span className="mission-line">ICU triage radar with patient access scoped by clinical assignment</span>
 
           <div className="command-visual" aria-hidden="true">

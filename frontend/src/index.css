@@ -653,12 +653,12 @@ button {
   box-shadow: inset 0 1px rgba(255, 255, 255, 0.08), 0 18px 40px rgba(0, 0, 0, 0.18);
 }
 
-.login-summary strong {
+.summary-strip.login-summary strong {
   color: #fff;
   text-shadow: 0 0 16px rgba(255, 255, 255, 0.35);
 }
 
-.login-summary span {
+.summary-strip.login-summary span {
   color: #fff;
   opacity: 0.9;
 }
