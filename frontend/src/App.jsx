@@ -391,8 +391,21 @@ function LoginPage({ onLogin }) {
       <div className="login-frame">
         <section className="login-copy" aria-label="Project Chronos access">
           <p>Project Chronos</p>
-          <h1>Doctor sign in</h1>
+          <h1>Digital twin access</h1>
           <span className="mission-line">ICU triage radar with patient access scoped by clinical assignment</span>
+
+          <div className="command-visual" aria-hidden="true">
+            <div className="command-core">
+              <span />
+              <i />
+            </div>
+            <div className="signal-stack">
+              <div className="signal-row red"><strong>RED</strong><span>BED-04</span><em>74%</em></div>
+              <div className="signal-row amber"><strong>AMBER</strong><span>BED-12</span><em>49%</em></div>
+              <div className="signal-row green"><strong>GREEN</strong><span>BED-16</span><em>18%</em></div>
+            </div>
+          </div>
+
           <div className="summary-strip login-summary">
             <div><strong>{doctors.length}</strong><span>doctor rosters</span></div>
             <div><strong>2h</strong><span>primary risk view</span></div>
@@ -402,11 +415,13 @@ function LoginPage({ onLogin }) {
         </section>
 
         <form className="login-card" onSubmit={handleSubmit}>
+          <div className="login-card-glow" aria-hidden="true" />
           <div className="section-head compact">
             <div>
-              <p>Secure access</p>
+              <p>Secure command access</p>
               <h2>Clinician login</h2>
             </div>
+            <span className="login-status-chip">Online</span>
           </div>
 
           <label className="login-field">
